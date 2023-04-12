@@ -4,6 +4,8 @@
 
 ## Prerequisites
 
+---
+
 - Java 17
 - Maven 3.x 
 
