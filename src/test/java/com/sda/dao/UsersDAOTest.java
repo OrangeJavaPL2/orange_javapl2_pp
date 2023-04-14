@@ -1,5 +1,6 @@
 package com.sda.dao;
 
+import com.github.javafaker.Faker;
 import com.sda.db.HibernateUtils;
 import com.sda.model.User;
 import jakarta.persistence.PersistenceException;
@@ -18,13 +19,7 @@ class UsersDAOTest {
     void testCreateHappyPath() {
         // given
         final String username = UUID.randomUUID().toString();
-        final User expectedUser = new User();
-        expectedUser.setUsername(username);
-        expectedUser.setAge(27);
-        expectedUser.setName("Sue");
-        expectedUser.setSurname("Doe");
-        expectedUser.setPassword("Pass");
-        expectedUser.setEmail("username@example.com");
+        final User expectedUser = getUser(username);
 
         // when
         usersDAO.create(expectedUser);
@@ -47,12 +42,7 @@ class UsersDAOTest {
     void testCreateConstrainsViolationNullName() {
         // given
         final String username = UUID.randomUUID().toString();
-        final User expectedUser = new User();
-        expectedUser.setUsername(username);
-        expectedUser.setAge(27);
-        expectedUser.setSurname("Doe");
-        expectedUser.setPassword("Pass");
-        expectedUser.setEmail("username@example.com");
+        final User expectedUser = getUser(username);
 
         // when
         Executable executable = () -> usersDAO.create(expectedUser);
@@ -65,12 +55,7 @@ class UsersDAOTest {
     void testCreateConstrainsViolationNullSurname() {
         // given
         final String username = UUID.randomUUID().toString();
-        final User expectedUser = new User();
-        expectedUser.setUsername(username);
-        expectedUser.setName("Sue");
-        expectedUser.setAge(27);
-        expectedUser.setPassword("Pass");
-        expectedUser.setEmail("username@example.com");
+        final User expectedUser = getUser(username);
 
         // when
         Executable executable = () -> usersDAO.create(expectedUser);
@@ -95,13 +80,7 @@ class UsersDAOTest {
     void testExistsShouldReturnTrue() {
         // given
         final String username = UUID.randomUUID().toString();
-        final User expectedUser = new User();
-        expectedUser.setUsername(username);
-        expectedUser.setAge(27);
-        expectedUser.setName("Sue");
-        expectedUser.setSurname("Doe");
-        expectedUser.setPassword("Pass");
-        expectedUser.setEmail("username@example.com");
+        final User expectedUser = getUser(username);
 
         usersDAO.create(expectedUser);
 
@@ -110,5 +89,76 @@ class UsersDAOTest {
 
         // then
         Assertions.assertTrue(exists);
+    }
+
+    @Test
+    void testFindByUsernameNotFound() {
+        // given
+        final String nonExistingUsername = "nonExistingUsername";
+
+        // when
+        User user = usersDAO.findByUsername(nonExistingUsername);
+
+        // then
+        Assertions.assertNull(user);
+    }
+
+    @Test
+    void testFindByUsernameHappyPath() {
+        // given
+        final String username = UUID.randomUUID().toString();
+        final User expectedUser = getUser(username);
+        usersDAO.create(expectedUser);
+
+        // when
+        User actualUser = usersDAO.findByUsername(username);
+
+        // then
+        Assertions.assertEquals(expectedUser, actualUser);
+        Assertions.assertEquals(expectedUser.getUsername(), actualUser.getUsername());
+        Assertions.assertEquals(expectedUser.getName(), actualUser.getName());
+        Assertions.assertEquals(expectedUser.getSurname(), actualUser.getSurname());
+        Assertions.assertEquals(expectedUser.getPassword(), actualUser.getPassword());
+        Assertions.assertEquals(expectedUser.getAge(), actualUser.getAge());
+        Assertions.assertEquals(expectedUser.getEmail(), actualUser.getEmail());
+    }
+
+    @Test
+    void testDeleteByUsernameNonExistingUser() {
+        // given
+        final String nonExistingUsername = "nonExistingUsername";
+
+        // when
+        boolean deleted = usersDAO.deleteByUsername(nonExistingUsername);
+
+        // then
+        Assertions.assertFalse(deleted);
+    }
+
+    @Test
+    void testDeleteByUsernameSuccess() {
+        // given
+        final String username = UUID.randomUUID().toString();
+        final User user = getUser(username);
+        usersDAO.create(user);
+
+        // when
+        boolean deleted = usersDAO.deleteByUsername(username);
+
+        // then
+        Assertions.assertTrue(deleted);
+    }
+
+    private User getUser(String username) {
+        Faker faker = new Faker();
+
+        final User expectedUser = new User();
+        expectedUser.setUsername(username);
+        expectedUser.setAge(faker.number().numberBetween(1, 120));
+        expectedUser.setName(faker.name().firstName());
+        expectedUser.setSurname(faker.name().lastName());
+        expectedUser.setPassword(faker.internet().password());
+        expectedUser.setEmail(faker.internet().emailAddress());
+        return expectedUser;
     }
 }
